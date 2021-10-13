@@ -293,14 +293,16 @@ def download_splunk(os_extension, links):
         Current_Directory = os.getcwd() + '\\'
         
         # MSI installer failure codes
+        # 1603 - A fatal error occurred during installation.
+        # 1622 - There was an error opening installation log file.
         # 1625 - This installation is forbidden by system policy.
         
         # If os_check returns a 1, we can use powershell
         if os_check == '1':
             print("Starting .msi splunk download...")
-            os.system("curl " + str(Msi_Link_64) + " --output splunk.msi")
+            #os.system("curl " + str(Msi_Link_64) + " --output splunk.msi")
             print("Starting splunk install...")
-            install = os.system("msiexec /i " + Current_Directory + "splunk.msi AGREETOLICENSE=Yes LOGON_USERNAME='username' LOGON_PASSWORD='password' LAUNCHSPLUNK=0 SPLUNKUSERNAME='username' SPLUNKPASSWORD='password' /l*v C:\\tmp\\SplunkInstall.log /quiet")
+            install = os.system("msiexec /i " + Current_Directory + "splunk.msi AGREETOLICENSE=Yes SPLUNKUSERNAME='username' SPLUNKPASSWORD='password' /l*v SplunkInstall.log /quiet")
             print("Install code:", install)
         # Otherwise, default to powershell commands
         else:
