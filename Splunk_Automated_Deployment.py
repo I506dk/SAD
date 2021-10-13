@@ -298,12 +298,14 @@ def download_splunk(os_extension, links):
             os.system("curl " + str(Msi_Link_64) + " --output splunk.msi")
             print("Starting splunk install...")
             install = os.system("msiexec /i " + Current_Directory + "splunk.msi AGREETOLICENSE=Yes LOGON_USERNAME='username' LOGON_PASSWORD='password' LAUNCHSPLUNK=0 SPLUNKUSERNAME='username' SPLUNKPASSWORD='password' /l*v C:\\tmp\\SplunkInstall.log /quiet")
+            print("Install code:", install)
         # Otherwise, default to powershell commands
         else:
             print("Starting .msi splunk download...")
             subprocess.check_output(["powershell.exe", "Invoke-WebRequest -Uri '", Msi_Link_64, "' -OutFile splunk.msi"])
             print("Starting splunk install...")
             install = os.system("msiexec /i " + Current_Directory + "splunk.msi AGREETOLICENSE=Yes LOGON_USERNAME='username' LOGON_PASSWORD='password' LAUNCHSPLUNK=0 SPLUNKUSERNAME='username' SPLUNKPASSWORD='password' /l*v C:\\tmp\\SplunkInstall.log /quiet")
+            print("Install code:", install)
 
     # Osx will probably need to be manually installed as well
     # No idea how osx works
