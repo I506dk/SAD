@@ -303,7 +303,16 @@ def download_splunk(os_extension, links):
             #os.system("curl " + str(Msi_Link_64) + " --output splunk.msi")
             print("Starting splunk install...")
             install = os.system("msiexec /i " + Current_Directory + "splunk.msi AGREETOLICENSE=Yes SPLUNKUSERNAME='username' SPLUNKPASSWORD='password' /l*v SplunkInstall.log /quiet")
-            print("Install code:", install)
+            if install == 0:
+                print("Splunk install successful!")
+            elif install == 1603:
+                print("A fatal error occurred during installation.")
+            elif install == 1622:
+                print("There was an error opening installation log file.")
+            elif install == 1625:
+                print("This installation is forbidden by system policy.")
+            else:
+                print(install)
         # Otherwise, default to powershell commands
         else:
             print("Starting .msi splunk download...")
