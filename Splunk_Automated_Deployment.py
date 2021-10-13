@@ -292,8 +292,11 @@ def download_splunk(os_extension, links):
         # Get current directory
         Current_Directory = os.getcwd() + '\\'
         
+        # MSI installer failure codes
+        # 1625 - This installation is forbidden by system policy.
+        
         # If os_check returns a 1, we can use powershell
-        if os_check == 1:
+        if os_check == '1':
             print("Starting .msi splunk download...")
             os.system("curl " + str(Msi_Link_64) + " --output splunk.msi")
             print("Starting splunk install...")
