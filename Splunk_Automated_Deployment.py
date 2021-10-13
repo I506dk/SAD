@@ -25,15 +25,17 @@ def install_library(package):
     subprocess.call(['pip', 'install', package])
 
 # Install missing packages
-try:
-    # Import packages here
-    import bs4
-    import requests
-    import paramiko
-except Exception as e:
-    Missing_Library = str(e).strip('No module named ')
-    Missing_Library = Missing_Library.strip("'")
-    install_library(Missing_Library)
+while True:
+    try:
+        # Import packages here
+        import bs4
+        import requests
+        import paramiko
+        break
+    except Exception as e:
+        Missing_Library = str(e).strip('No module named ')
+        Missing_Library = Missing_Library.strip("'")
+        install_library(Missing_Library)
 
 
 # These must be manually installed, as they are not part of the standard library
