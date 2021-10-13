@@ -300,8 +300,11 @@ def download_splunk(os_extension, links):
         # If os_check returns a 1, we can use powershell
         if os_check == '1':
             print("Starting .msi splunk download...")
-            #os.system("curl " + str(Msi_Link_64) + " --output splunk.msi")
+            os.system("curl " + str(Msi_Link_64) + " --output splunk.msi")
             print("Starting splunk install...")
+            # LOGON Credentials are for the user that splunk needs to run as. (If different from the current user)
+            # Launch Splunk tells splunk to run at boot (1) or not (0)
+            # AGREETOLICENSE=Yes LOGON_USERNAME='username' LOGON_PASSWORD='password' LAUNCHSPLUNK=0 SPLUNKUSERNAME='username' SPLUNKPASSWORD='password' /l*v SplunkInstall.log /quiet
             install = os.system("msiexec /i " + Current_Directory + "splunk.msi AGREETOLICENSE=Yes SPLUNKUSERNAME='username' SPLUNKPASSWORD='password' /l*v SplunkInstall.log /quiet")
             if install == 0:
                 print("Splunk install successful!")
@@ -312,13 +315,23 @@ def download_splunk(os_extension, links):
             elif install == 1625:
                 print("This installation is forbidden by system policy.")
             else:
-                print(install)
+                print("Install failed with error code:", install)
         # Otherwise, default to powershell commands
         else:
             print("Starting .msi splunk download...")
             subprocess.check_output(["powershell.exe", "Invoke-WebRequest -Uri '", Msi_Link_64, "' -OutFile splunk.msi"])
             print("Starting splunk install...")
-            install = os.system("msiexec /i " + Current_Directory + "splunk.msi AGREETOLICENSE=Yes LOGON_USERNAME='username' LOGON_PASSWORD='password' LAUNCHSPLUNK=0 SPLUNKUSERNAME='username' SPLUNKPASSWORD='password' /l*v C:\\tmp\\SplunkInstall.log /quiet")
+            install = os.system("msiexec /i " + Current_Directory + "splunk.msi AGREETOLICENSE=Yes SPLUNKUSERNAME='username' SPLUNKPASSWORD='password' /l*v SplunkInstall.log /quiet")
+            if install == 0:
+                print("Splunk install successful!")
+            elif install == 1603:
+                print("A fatal error occurred during installation.")
+            elif install == 1622:
+                print("There was an error opening installation log file.")
+            elif install == 1625:
+                print("This installation is forbidden by system policy. (Possible lack of privileges)")
+            else:
+                print("Install failed with error code:", install)
             print("Install code:", install)
 
     # Osx will probably need to be manually installed as well
