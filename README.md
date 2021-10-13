@@ -51,4 +51,5 @@ pip install paramiko
 - [ ] Create directories and apps on the deployment server
 - [ ] Point all other machines back to the deployment server
 - [ ] Create output file of configuration created
+- [ ] Allow loading of configuration files for reuseability
 - [ ] Add support for OSX
