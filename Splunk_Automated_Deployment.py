@@ -353,8 +353,12 @@ def download_splunk(os_extension, links):
 def ssh_connect(hostname, username, password, port=22):
     # setup ssh client, and set key policies (for unknown hosts mainly)
     client = paramiko.SSHClient()
-    #client.load_system_host_keys()
-    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    # Load SSH host keys on current machine
+    client.load_system_host_keys()
+    # Reject unknown host keys (If unknown, there is potential for compromise)
+    client.set_missing_host_key_policy(RejectPolicy)
+    # AutoAdd will allow SSH session with unknown machine
+    #client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     # Set default timeout
     banner_timeout = 10
     
