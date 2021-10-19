@@ -101,20 +101,22 @@ def fetch_previous_links():
 
 # Function to scrape latest download links for splunk
 def fetch_current_links():
-    # Link to current/latest release of splunk
-    Current_Version_Link = 'https://www.splunk.com/en_us/download/splunk-enterprise.html'
+    # Link to current/latest release of splunk enterprise
+    Enterprise_Link = 'https://www.splunk.com/en_us/download/splunk-enterprise.html'
+    # Link to current/latest release of splunk forwarder
+    Forwarder_Link = 'https://www.splunk.com/en_us/download/universal-forwarder.html'
 
     # Get page and parse with beautifulsoup 
-    Get_Page = requests.get(Current_Version_Link)
-    Page_Repsonse = Get_Page.text
-    soup = BeautifulSoup(Page_Repsonse, 'html.parser')
+    Enterprise_Page = requests.get(Enterprise_Link)
+    Enterprise_Repsonse = Enterprise_Page.text
+    enterprise_soup = BeautifulSoup(Enterprise_Repsonse, 'html.parser')
 
     # Lists to keep up with links and versions
-    link_list = []
+    Enterprise_List = []
     Current_Versions = []
     
     # Look through all html for download links
-    for link in soup.find_all("a"):
+    for link in enterprise_soup.find_all("a"):
         # If download button is found, pull the link
         # For each link, get the os and the version
         if 'Download Now' in link.text:
@@ -124,21 +126,21 @@ def fetch_current_links():
             if 'windows' in Download_Link:
                 Stop_Index = Download_Link.find('/windows')
                 Current_Version = Download_Link[Start_Index:Stop_Index]
-                link_list.append(Download_Link)
+                Enterprise_List.append(Download_Link)
                 if ['Windows', Current_Version] not in Current_Versions:
                     Current_Versions.append(['Windows', Current_Version])
 
             elif 'linux' in Download_Link:
                 Stop_Index = Download_Link.find('/linux')
                 Current_Version = Download_Link[Start_Index:Stop_Index]
-                link_list.append(Download_Link)
+                Enterprise_List.append(Download_Link)
                 if ['Linux', Current_Version] not in Current_Versions:
                     Current_Versions.append(['Linux', Current_Version])
 
             elif 'osx' in Download_Link:
                 Stop_Index = Download_Link.find('/osx')
                 Current_Version = Download_Link[Start_Index:Stop_Index]
-                link_list.append(Download_Link)
+                Enterprise_List.append(Download_Link)
                 if ['Osx', Current_Version] not in Current_Versions:
                     Current_Versions.append(['Osx', Current_Version])
 
@@ -161,8 +163,8 @@ def fetch_current_links():
         User_Input = input("Use latest version of Splunk for install? (y/n) ").lower()
 
         if User_Input == 'y' or User_Input == "yes":
-            print("Continuing using version " + str() + "...")
-            return_list = link_list
+            print("Continuing using version " + str(Current_Versions[0][1]) + " ...")
+            return_list = Enterprise_List
             
         elif User_Input == 'n' or User_Input == "no":   
             # Parse through links if version entered is valid
@@ -184,7 +186,7 @@ def fetch_current_links():
                         print("Version " + Previous_Version + " found for " + str(version[0]) + ".")
 
                     while True:
-                        User_Input = input("Continuing using version " + current_version + "? (y/n) ")
+                        User_Input = input("Continue using version " + current_version + "? (y/n) ")
                     
                         if User_Input == 'y' or User_Input == "yes":
                             print("Continuing using version " + current_version + "...")
