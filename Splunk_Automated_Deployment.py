@@ -423,7 +423,7 @@ if __name__ == '__main__':
     Current_Hostname, Current_IP, Current_Extension = get_machine_info()
     
     # Download and install splunk
-    download_splunk(Current_Extension, Current_Links)
+    #download_splunk(Current_Extension, Current_Links)
     
 ########## For Testing #################################################
     hostname = '192.168.0.10'
