@@ -45,7 +45,8 @@ pip install paramiko
 
 ## To Do:
 
-- [x] Fetch all versions of Splunk for download
+- [x] Fetch all versions of Splunk Enterprise for download
+- [ ] Fetch all versions of the Splunk Forwarder
 - [x] Download and install Splunk with respect to the OS
 - [ ] Add SSH to access all other machines in the deployment
 - [ ] Create directories and apps on the deployment server
