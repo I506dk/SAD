@@ -50,16 +50,26 @@ from bs4 import BeautifulSoup
 # Beginning of function declarations
 # Function to scrape previous download links for splunk
 def fetch_previous_links():
+    print("Getting previous splunk release links...")
+
     # Site link to older downloads, if previous version(s) is/are needed
     Previous_Version_Link = 'https://www.splunk.com/en_us/download/previous-releases.html'
+    # Site link to older downloads, if previous version(s) is/are needed (splunk forwarder)
+    Forwarder_Link_Old = 'https://www.splunk.com/en_us/download/previous-releases/universalforwarder.html'
     
     # Get page and parse with beautifulsoup 
     Get_Page = requests.get(Previous_Version_Link)
     Page_Repsonse = Get_Page.text
     soup = BeautifulSoup(Page_Repsonse, 'html.parser')
+    
+    # Get page and parse with beautifulsoup (For old forwarder releases)
+    Forwarder_Page_Old = requests.get(Forwarder_Link_Old)
+    Forwarder_Repsonse_Old = Forwarder_Page_Old.text
+    forwarder_soup_old = BeautifulSoup(Forwarder_Repsonse_Old, 'html.parser')
 
     # Lists to keep up with links and versions
     link_list = []
+    forwarders_list = []
     Previous_Versions = []
     
     # Look through all html for download links
@@ -95,24 +105,43 @@ def fetch_previous_links():
                 # Silently pass cause there shouldn't be anything else
                 # And if there is, we don't need it anyway
                 pass
+    
+    # Look through all html for download links (Old forwarder links)
+    # There are a lot of these...
+    for link in forwarder_soup_old.find_all("a"):
+        # If download button is found, pull the link
+        # For each link, get the os and the version
+        if 'Download Now' in link.text:
+            Download_Link = link['data-link']
+            forwarders_list.append(Download_Link)
 
-    return link_list, Previous_Versions
+
+    return link_list, Previous_Versions, forwarders_list
 
 
 # Function to scrape latest download links for splunk
 def fetch_current_links():
+    print("Getting current splunk release links...")
+
     # Link to current/latest release of splunk enterprise
     Enterprise_Link = 'https://www.splunk.com/en_us/download/splunk-enterprise.html'
     # Link to current/latest release of splunk forwarder
     Forwarder_Link = 'https://www.splunk.com/en_us/download/universal-forwarder.html'
+    Forwarder_Link_Old = 'https://www.splunk.com/en_us/download/previous-releases/universalforwarder.html'
 
-    # Get page and parse with beautifulsoup 
+    # Get page and parse with beautifulsoup
     Enterprise_Page = requests.get(Enterprise_Link)
     Enterprise_Repsonse = Enterprise_Page.text
     enterprise_soup = BeautifulSoup(Enterprise_Repsonse, 'html.parser')
+    
+    # Get page and parse with beautifulsoup (For forwarders)
+    Forwarder_Page = requests.get(Forwarder_Link)
+    Forwarder_Repsonse = Forwarder_Page.text
+    forwarder_soup = BeautifulSoup(Forwarder_Repsonse, 'html.parser')
 
     # Lists to keep up with links and versions
     Enterprise_List = []
+    Forwarder_List = []
     Current_Versions = []
     
     # Look through all html for download links
@@ -148,6 +177,14 @@ def fetch_current_links():
                 # Silently pass cause there shouldn't be anything else
                 # And if there is, we don't need it anyway
                 pass
+                
+    # Look through all html for download links (Latest forwarder links)
+    for link in forwarder_soup.find_all("a"):
+        # If download button is found, pull the link
+        # For each link, get the os and the version
+        if 'Download Now' in link.text:
+            Download_Link = link['data-link']
+            Forwarder_List.append(Download_Link)
 
     # Print out versions
     print("Current Version for all Platforms: ")
@@ -166,9 +203,14 @@ def fetch_current_links():
             print("Continuing using version " + str(Current_Versions[0][1]) + " ...")
             return_list = Enterprise_List
             
+            # Get only the links for the version being used (In this case its the latest)
+            for link in Forwarder_List:
+                if str(Current_Versions[0][1]) in str(link):
+                    return_list.append(link)
+            
         elif User_Input == 'n' or User_Input == "no":   
             # Parse through links if version entered is valid
-            old_links, old_releases = fetch_previous_links()
+            old_links, old_releases, old_forwarders = fetch_previous_links()
             # Prompt user for version, check if it is valid, and get respective links
             while True:
                 Previous_Version = input("Please enter a previous version to use: ")
@@ -196,6 +238,11 @@ def fetch_current_links():
                             for link in old_links:
                                 if concatenated_link in str(link):
                                     return_list.append(link)
+                            # Return list of older forwarder links for chosen version
+                            for link in old_forwarders:
+                                if concatenated_link in str(link):
+                                    return_list.append(link)
+                                    
                             break
                         elif User_Input == 'n' or User_Input == "no":
                             print("Well I am a bit lost... exiting...")
@@ -209,7 +256,7 @@ def fetch_current_links():
             print("Invalid character used. Please use Y/y for yes or N/n for no.")
             continue
         break
-    
+        
     return return_list
 
 
@@ -249,6 +296,7 @@ def get_machine_info():
 
    
 # Download splunk with respect to the OS
+# Need to differentiate between enterprise and forwarder...
 def download_splunk(os_extension, links):
     # Separate links by their extension
     for link in links:
