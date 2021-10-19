@@ -12,6 +12,9 @@
 # The lazy way of setting up things, and it only assumes that python and pip are installed
 # Possibly check to see if pip is installed as well. 
 
+
+# for tarballs just decompress them where you want them to live
+
 # These are part of the standard library
 import os
 import socket
@@ -485,10 +488,13 @@ pass4SymmKey = <pass>
 # On each indexer, enable CLI, and restart
 # CLI command: splunk enable listen 9997 -auth <username>:<password>
 
+
+
+
                 ###### FOWARDERS ######
 # On each forwarder, create a deploymentclient.conf file
 # that points back to the deployment server
-# etc/system/local/deploymentclient.conf file:
+# ~/splunkforwarder/etc/system/local/deploymentclient.conf file:
 """
    [deployment-client]
 
@@ -496,6 +502,65 @@ pass4SymmKey = <pass>
    # Specify the deployment server; for example, "10.1.2.4:8089".
    targetUri= <URI:port> 
 """
+
+# ~/splunkforwarder/etc/system/local/authentication.conf
+# Default authentication.conf file for forwarder
+"""
+    [splunk_auth]
+    enablePasswordHistory = 0
+    expireAlertDays = 15
+    expirePasswordDays = 90
+    expireUserAccounts = 0
+    forceWeakPasswordChange = 0
+    lockoutAttempts = 5
+    lockoutMins = 30
+    lockoutThresholdMins = 5
+    lockoutUsers = 0
+    minPasswordDigit = 0
+    minPasswordLength = 1
+    minPasswordLowercase = 0
+    minPasswordSpecial = 0
+    minPasswordUppercase = 0
+    passwordHistoryCount = 24
+"""
+
+# ~/splunkforwarder/etc/system/local/outputs.conf
+# Default outputs.conf file for forwarder
+# Default port is 9997 on the forwarder outputs
+"""
+    [tcpout]
+    defaultgroup = default-autolb-group
+    
+    [tcpout:default-autolb-group]
+    server = {indexer_ip}:{port}
+    
+    [tcpout-server://{indexer_ip}:{port}]
+"""
+
+# ~/splunkforwarder/etc/system/local/server.conf
+# Default server.conf file for forwarder
+"""
+    [general]
+    serverName = {current_forwarder_hostname}
+    pass4SymmKey = {ssl_key}
+    
+    [sslConfig]
+    sslPassword = {ssl_password}
+    
+    [lmpool:auto_generated_pool_forwarder]
+    description = auto_generated_pool_forwarder
+    quota = Max
+    slaves = *
+    stack_id = free
+"""
+
+# ~/splunkforwarder/etc/system/local/web.conf
+# Default web.conf file for forwarder
+"""
+    [settings]
+    mgmtHostPort = 127.0.0.1:8090
+"""
+
 
              ###### DEPLOYMENT SERVER ######
 # Create directories for deployment apps (Dev and Prod)
