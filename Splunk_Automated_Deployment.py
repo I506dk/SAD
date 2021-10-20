@@ -11,8 +11,16 @@
 # Cheat and install pip packages if not already installed (Don't recommend this, but it is an option)
 # The lazy way of setting up things, and it only assumes that python and pip are installed
 # Possibly check to see if pip is installed as well. 
+# Remove pip packages and purge
+# Check permissions
+"""
+/opt/splunk/etc/
+chown -R splunk:splunk
 
-
+HF
+/opt/splunk/etc/
+chown -R root:root
+"""
 # for tarballs just decompress them where you want them to live
 
 # These are part of the standard library
