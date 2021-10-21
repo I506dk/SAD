@@ -329,7 +329,7 @@ def get_app_links():
                 Valid_Apps.append([App_Title, Possible_App])
         Start += 1
 
-    print("Writing newly found apps to file...")
+    Newly_Found = 0
 
     # Write newly discovered apps to file
     with open(App_File, 'a+') as file:
@@ -337,10 +337,11 @@ def get_app_links():
             if app not in Known_Apps: 
                 file.write(app[0] + ", " + app[1] + '\n')
                 Known_Apps.append(app)
+                Newly_Found += 1
+                
+    print("Writing " + str(Newly_Found) + " newly found apps to file...") 
     file.close()
-    
-    print(Known_Apps)
-    
+
     print("Done with app enumeration.")
     
     return Known_Apps
@@ -550,18 +551,18 @@ def ssh_connect(hostname, username, password, port=22):
 # Beginning of main
 if __name__ == '__main__':
     # Get current version links for all platforms
-    Current_Links = fetch_current_links()
+    #Current_Links = fetch_current_links()
+
+    # Scrape Splunkbase site for apps and app links
+    Current_Apps = get_app_links()
 
 ##### For this machine (deployment server) #############################
 
     # Get current machine info
-    Current_Hostname, Current_IP, Current_Extension = get_machine_info()
+    #Current_Hostname, Current_IP, Current_Extension = get_machine_info()
     
     # Download and install splunk
-    download_splunk(Current_Extension, Current_Links)
-    
-    # Scrape Splunkbase site for apps and app links
-    Current_Apps = get_app_links()
+    #download_splunk(Current_Extension, Current_Links)
     
 ########## For Testing #################################################
     hostname = '192.168.0.10'
