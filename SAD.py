@@ -301,7 +301,7 @@ def get_app_links():
     Start = 4106
     Limit = 6000
     
-    print("Starting enumeration of new apps...")
+    print("Starting enumeration of new apps (This will take some time...)")
     
     # If apps have been previously discovered, start there
     if len(Known_Apps) > 0:
@@ -336,11 +336,14 @@ def get_app_links():
         for app in Valid_Apps:
             if app not in Known_Apps: 
                 file.write(app[0] + ", " + app[1] + '\n')
+                Known_Apps.append(app)
     file.close()
+    
+    print(Known_Apps)
     
     print("Done with app enumeration.")
     
-    return
+    return Known_Apps
     
 
 # Get machine info to determine download type
@@ -555,7 +558,7 @@ if __name__ == '__main__':
     Current_Hostname, Current_IP, Current_Extension = get_machine_info()
     
     # Download and install splunk
-    #download_splunk(Current_Extension, Current_Links)
+    download_splunk(Current_Extension, Current_Links)
     
     # Scrape Splunkbase site for apps and app links
     Current_Apps = get_app_links()
