@@ -23,6 +23,9 @@ chown -R root:root
 """
 # for tarballs just decompress them where you want them to live
 
+# Scrape splunk apps
+# https://splunkbase.splunk.com/apps/#/product/splunk/
+
 # These are part of the standard library
 import os
 import socket
@@ -268,6 +271,73 @@ def fetch_current_links():
     return return_list
 
 
+# Get links to the apps on splunk's site
+def get_app_links():
+    #App_Link = "https://splunkbase.splunk.com/apps/#/product/splunk/"
+    App_Link = "https://splunkbase.splunk.com/app/"
+    
+    # Splunk app file (in same directory as splunk script)
+    App_File = "Splunk_Apps.txt"
+    
+    #Known_Apps
+    
+    with open(App_File, 'r') as file:
+        File_Contents = file.readlines()
+        
+        for line in File_Contents:
+            Current_Line = line.replace('\n', '')
+            print(Current_Line)
+        
+            #print(File_Contents)
+            #if len(File_Contents) > 0:
+             #   File_Contents = File_Contents[0].split(',')
+              #  print(File_Contents)
+            
+    file.close()
+    
+    Valid_Apps = []
+    # 4106 seems ot be the first non archived app
+    i = 4106
+    while i < 4110:
+        Possible_App = App_Link + str(i)
+
+        # Get page and parse with beautifulsoup
+        App_Page = requests.get(Possible_App)
+        Status = App_Page.status_code
+        #if Status < 400:
+        if Status == 200:
+            app_soup = BeautifulSoup(App_Page.text, 'html.parser')
+            App_Title = app_soup.title.string
+            App_Title = App_Title.replace("| Splunkbase", '')
+            App_Title = App_Title.strip()
+            
+            if "App Unavailable" not in App_Title:
+                print(App_Title)
+                Valid_Apps.append([App_Title, Possible_App])
+            
+        i += 1
+    
+
+    
+    #with open(App_File, 'a+') as file:
+    #    for app in Valid_Apps:
+            
+            
+        
+    #    file.close()
+    
+    
+    
+    print(len(Valid))
+    
+    
+    
+  
+    
+    return
+    
+
+
 # Get machine info to determine download type
 def get_machine_info():
 
@@ -473,15 +543,17 @@ def ssh_connect(hostname, username, password, port=22):
 # Beginning of main
 if __name__ == '__main__':
     # Get current version links for all platforms
-    Current_Links = fetch_current_links()
+    #Current_Links = fetch_current_links()
 
 ##### For this machine (deployment server) #############################
 
     # Get current machine info
-    Current_Hostname, Current_IP, Current_Extension = get_machine_info()
+    #Current_Hostname, Current_IP, Current_Extension = get_machine_info()
     
     # Download and install splunk
     #download_splunk(Current_Extension, Current_Links)
+    
+    get_app_links()
     
 ########## For Testing #################################################
     hostname = '192.168.0.10'
