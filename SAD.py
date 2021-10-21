@@ -273,8 +273,13 @@ def fetch_current_links():
 
 # Get links to the apps on splunk's site
 def get_app_links():
+    # App link
+    App_Link = "https://splunkbase.splunk.com/app/"
+
     # Splunk app file (in same directory as splunk script)
     App_File = "Splunk_Apps.txt"
+    
+    print("Reading in known apps...")
     
     # Get already known apps
     Known_Apps = []
@@ -291,10 +296,24 @@ def get_app_links():
 
     # Keep up with app pages that are valid (ie. returned a 200 response)
     Valid_Apps = []
-    # 4106 seems ot be the first non archived app
-    i = 4106
-    while i < 6000:
-        Possible_App = App_Link + str(i)
+    # 4106 seems to be the first non archived app, so this will serve as a starting point
+    # Set default app enumeratation limits
+    Start = 4106
+    Limit = 6000
+    
+    print("Starting enumeration of new apps...")
+    
+    # If apps have been previously discovered, start there
+    if len(Known_Apps) > 0:
+        Last_App = (Known_Apps[-1][1]).replace(App_Link, '')
+        Last_App = int(Last_App)
+        Stop_App = Last_App + 500
+        # Update enumeratation limits
+        Start = Last_App
+        Limit = Stop_App
+    
+    while Start < Limit:
+        Possible_App = App_Link + str(Start)
 
         # Get page and parse with beautifulsoup
         App_Page = requests.get(Possible_App)
@@ -308,7 +327,9 @@ def get_app_links():
             
             if "App Unavailable" not in App_Title:
                 Valid_Apps.append([App_Title, Possible_App])
-        i += 1
+        Start += 1
+
+    print("Writing newly found apps to file...")
 
     # Write newly discovered apps to file
     with open(App_File, 'a+') as file:
@@ -316,6 +337,8 @@ def get_app_links():
             if app not in Known_Apps: 
                 file.write(app[0] + ", " + app[1] + '\n')
     file.close()
+    
+    print("Done with app enumeration.")
     
     return
     
@@ -535,7 +558,7 @@ if __name__ == '__main__':
     #download_splunk(Current_Extension, Current_Links)
     
     # Scrape Splunkbase site for apps and app links
-    get_app_links()
+    Current_Apps = get_app_links()
     
 ########## For Testing #################################################
     hostname = '192.168.0.10'
