@@ -31,6 +31,7 @@ import os
 import socket
 import platform
 import subprocess
+from os import path
 
 
 # Function to instal packages via pip (aka Pip Cheat)
@@ -43,6 +44,7 @@ while True:
     try:
         # Import packages here
         import bs4
+        from bs4 import BeautifulSoup
         import requests
         import paramiko
         break
@@ -50,13 +52,7 @@ while True:
         Missing_Library = str(e).strip('No module named ')
         Missing_Library = Missing_Library.strip("'")
         install_library(Missing_Library)
-
-
-# These must be manually installed, as they are not part of the standard library
-import requests
-import paramiko
-from bs4 import BeautifulSoup
-
+        
 
 # Beginning of function declarations
 # Function to scrape previous download links for splunk
@@ -283,23 +279,34 @@ def get_app_links():
     
     # Get already known apps
     Known_Apps = []
-    # Read known apps from text file
-    with open(App_File, 'r') as file:
-        File_Contents = file.readlines()
-        for line in File_Contents:
-            Current_Line = line.replace('\n', '')
-            Current_Line = Current_Line.split(',')
-            if len(Current_Line) > 1:
-                Current_Line[1] = Current_Line[1].strip()
-                Known_Apps.append(Current_Line)
-    file.close()
+    
+    # Get current working directory
+    Current_Directory = os.getcwd()
+    # Full path to app file
+    Full_Path = str(Current_Directory) + "\\" + str(App_File)
+    # Check to see if file exists
+    App_File_Existence = path.exists(Full_Path)
+    
+    if App_File_Existence == True:
+        # Read known apps from text file
+        with open(App_File, 'r') as file:
+            File_Contents = file.readlines()
+            for line in File_Contents:
+                Current_Line = line.replace('\n', '')
+                Current_Line = Current_Line.split(',')
+                if len(Current_Line) > 1:
+                    Current_Line[1] = Current_Line[1].strip()
+                    Known_Apps.append(Current_Line)
+        file.close()
+    else:
+        print("No app file found. Starting from scratch.")
 
     # Keep up with app pages that are valid (ie. returned a 200 response)
     Valid_Apps = []
     # 4106 seems to be the first non archived app, so this will serve as a starting point
     # Set default app enumeratation limits
     Start = 4106
-    Limit = 6000
+    Limit = 6150
     
     print("Starting enumeration of new apps (This will take some time...)")
     
@@ -318,6 +325,9 @@ def get_app_links():
         # Get page and parse with beautifulsoup
         App_Page = requests.get(Possible_App)
         Status = App_Page.status_code
+        
+        # List of versions for the current app
+        App_Versions = []
 
         if Status == 200:
             app_soup = BeautifulSoup(App_Page.text, 'html.parser')
@@ -326,7 +336,19 @@ def get_app_links():
             App_Title = App_Title.strip()
             
             if "App Unavailable" not in App_Title:
-                Valid_Apps.append([App_Title, Possible_App])
+                for version in app_soup.find_all(id="release-option"):
+                    # Get all ap versions, strip white spaces and append them to version list
+                    versions = version.text.strip()
+                    versions = versions.split('\n')
+                    App_Versions.append(versions[0])
+                
+                # Create list of data for each app
+                App_Data = [App_Title, Possible_App]
+                for version in App_Versions:
+                    App_Data.append(version)
+            
+                # Append Current app data
+                Valid_Apps.append(App_Data)
         Start += 1
 
     Newly_Found = 0
@@ -334,8 +356,19 @@ def get_app_links():
     # Write newly discovered apps to file
     with open(App_File, 'a+') as file:
         for app in Valid_Apps:
-            if app not in Known_Apps: 
-                file.write(app[0] + ", " + app[1] + '\n')
+            if app not in Known_Apps:
+                Current_Line = ''
+                # Write app title, link, and versions to file
+                i = 0
+                while i < len(app):
+                    Current_Line += (str(app[i]))
+                    if i != (len(app) - 1):
+                        Current_Line += ", "
+                    else:
+                        Current_Line += '\n'
+                    i += 1
+                print(Current_Line)
+                file.write(Current_Line)
                 Known_Apps.append(app)
                 Newly_Found += 1
                 
