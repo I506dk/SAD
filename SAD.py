@@ -267,8 +267,8 @@ def fetch_current_links():
     return return_list
 
 
-# Get links to the apps on splunk's site
-def get_app_links():
+# Get links to the apps on splunk's site and save to text file
+def update_app_links():
     # App link
     App_Link = "https://splunkbase.splunk.com/app/"
 
@@ -369,7 +369,7 @@ def get_app_links():
                     i += 1
                 print(Current_Line)
                 file.write(Current_Line)
-                Known_Apps.append(app)
+                #Known_Apps.append(app)
                 Newly_Found += 1
                 
     print("Writing " + str(Newly_Found) + " newly found apps to file...") 
@@ -377,7 +377,89 @@ def get_app_links():
 
     print("Done with app enumeration.")
     
-    return Known_Apps
+    #return Known_Apps
+    return
+    
+
+# Read in all apps from text file, for user to specify a download
+def load_apps():
+    # Splunk app file (in same directory as splunk script)
+    App_File = "Splunk_Apps.txt"
+    
+    print("Reading in known apps...")
+    
+    # Get already known apps
+    Known_Apps = []
+    
+    # Get current working directory
+    Current_Directory = os.getcwd()
+    # Full path to app file
+    Full_Path = str(Current_Directory) + "\\" + str(App_File)
+    # Check to see if file exists
+    App_File_Existence = path.exists(Full_Path)
+    
+    if App_File_Existence == True:
+        # Read known apps from text file
+        with open(App_File, 'r') as file:
+            File_Contents = file.readlines()
+            for line in File_Contents:
+                Current_Line = line.replace('\n', '')
+                Current_Line = Current_Line.split(',')
+                if len(Current_Line) > 1:
+                    Current_Line[1] = Current_Line[1].strip()
+                    Known_Apps.append(Current_Line)
+        file.close()
+    else:
+        print("No app file found. Please run -update to enumerate apps.")
+        return
+        
+    if len(Known_Apps) > 0:
+        print(str(len(Known_Apps)) + " apps loaded from file.")
+    
+    # Create a list of apps that potentially match the user search.
+    Possible_Apps = []
+    
+    Current_App = input("Please enter an app name to download: ")
+    for app in Known_Apps:
+        if str(Current_App) == str(app[0]):
+            Latest_Version = str(app[2])
+            print("Found app " + str(app[0]) + ". Latest version is:" + Latest_Version)
+            while True:
+                Download_App = input("Download latest version of app? (y/n) ").lower()
+                if (Download_App == 'y') or (Download_App == "yes"):
+                    # Get app number from url
+                    App_Number = str(app[1])
+                    App_Number = App_Number.replace("https://splunkbase.splunk.com/app/", '')
+                    # Get app name
+                    App_Name = str(app[0])
+                    # Download app
+                    # Not implemented yet
+                    print("Downloading app...")
+                    #download_app(App_Number, Latest_Version, App_Name, username, password):
+                    print("Done.")
+                    break
+                elif (Download_App == 'n') or (Download_App == "no"):
+                    print("Skipping...")
+                    break
+                else:
+                    # Other character entered.
+                    print("Invalid response entered. Use y/Y for yes, and n/N for no.")
+            
+            
+            
+            
+            
+            
+        elif str(Current_App) in str(app[0]):
+            print("Did you mean: " + str(app[0]) + "?")
+            Possible_Apps.append(app)
+        else:
+            pass
+
+    return
+    
+    
+    
     
 
 # Get machine info to determine download type
@@ -587,7 +669,10 @@ if __name__ == '__main__':
     #Current_Links = fetch_current_links()
 
     # Scrape Splunkbase site for apps and app links
-    Current_Apps = get_app_links()
+    #Current_Apps = get_app_links()
+    
+    # Download apps from splunkbase site
+    load_apps()
 
 ##### For this machine (deployment server) #############################
 

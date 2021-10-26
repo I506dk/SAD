@@ -1797,4 +1797,3 @@ Microsoft SQL Server, https://splunkbase.splunk.com/app/6143, 2.1.6
 NMAP Scanner, https://splunkbase.splunk.com/app/6144, 3.0.10
 Threat Grid, https://splunkbase.splunk.com/app/6145, 2.1.10
 PostgreSQL, https://splunkbase.splunk.com/app/6146, 2.0.13
-PostgreSQL, https://splunkbase.splunk.com/app/6146, 2.0.13
