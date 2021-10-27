@@ -382,6 +382,8 @@ def update_app_links():
     
 
 # Read in all apps from text file, for user to specify a download
+# Downloads are behind a saml login
+'''
 def load_apps():
     # Splunk app file (in same directory as splunk script)
     App_File = "Splunk_Apps.txt"
@@ -445,11 +447,6 @@ def load_apps():
                     # Other character entered.
                     print("Invalid response entered. Use y/Y for yes, and n/N for no.")
             
-            
-            
-            
-            
-            
         elif str(Current_App) in str(app[0]):
             print("Did you mean: " + str(app[0]) + "?")
             Possible_Apps.append(app)
@@ -457,9 +454,7 @@ def load_apps():
             pass
 
     return
-    
-    
-    
+'''    
     
 
 # Get machine info to determine download type
@@ -666,21 +661,21 @@ def ssh_connect(hostname, username, password, port=22):
 # Beginning of main
 if __name__ == '__main__':
     # Get current version links for all platforms
-    #Current_Links = fetch_current_links()
+    Current_Links = fetch_current_links()
 
     # Scrape Splunkbase site for apps and app links
     #Current_Apps = get_app_links()
     
     # Download apps from splunkbase site
-    load_apps()
+    #load_apps()
 
 ##### For this machine (deployment server) #############################
 
     # Get current machine info
-    #Current_Hostname, Current_IP, Current_Extension = get_machine_info()
+    Current_Hostname, Current_IP, Current_Extension = get_machine_info()
     
     # Download and install splunk
-    #download_splunk(Current_Extension, Current_Links)
+    download_splunk(Current_Extension, Current_Links)
     
 ########## For Testing #################################################
     hostname = '192.168.0.10'
