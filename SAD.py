@@ -515,11 +515,16 @@ def download_splunk(os_extension, links):
             Osx_Tar_Link = link
 
     # Install the correct package based on the current OS
+    # Most of these commands need to be run with sudo
     if os_extension == ".deb":
         print("Starting .deb splunk download...")
         os.system("wget -O splunk.deb " + str(Deb_Link))
         print("Starting splunk install...")
         os.system("dpkg -i splunk.deb")
+        
+        # Start splunk forwarder and auto accept license agreement
+        os.system("cd /opt/splunkforwarder/bin")
+        os.system("./splunk start --accept-license SPLUNKUSERNAME='username' SPLUNKPASSWORD='password'")
  
     elif os_extension == ".rpm":
         print("Starting .rpm splunk download...")
