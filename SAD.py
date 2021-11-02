@@ -524,7 +524,7 @@ def download_splunk(os_extension, links):
         
         # Start splunk forwarder and auto accept license agreement
         os.system("cd /opt/splunkforwarder/bin")
-        os.system("./splunk start --accept-license SPLUNKUSERNAME='username' SPLUNKPASSWORD='password'")
+        os.system("./splunk start --accept-license")
  
     elif os_extension == ".rpm":
         print("Starting .rpm splunk download...")
