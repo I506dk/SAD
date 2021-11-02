@@ -523,10 +523,10 @@ def download_splunk(os_extension, links):
         print("Starting .deb splunk download...")
         os.system("wget -O splunk.deb " + str(Deb_Link))
         print("Starting splunk install...")
-        os.system("dpkg -i splunk.deb AGREETOLICENSE=Yes SPLUNKUSERNAME='username' SPLUNKPASSWORD='password' /l*v SplunkInstall.log /quiet")
+        os.system("dpkg -i splunk.deb")
         
         # Start splunk forwarder and auto accept license agreement
-        #os.system("cd /opt/splunk/bin; ./splunk start --accept-license SPLUNKUSERNAME='username' SPLUNKPASSWORD='password'")
+        os.system("cd /opt/splunk/bin; ./splunk start --accept-license --answer-yes --seed-passwd 'password'")
  
     elif os_extension == ".rpm":
         print("Starting .rpm splunk download...")
