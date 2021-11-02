@@ -495,12 +495,12 @@ def get_machine_info():
 # Need to differentiate between enterprise and forwarder...
 def download_splunk(os_extension, links):
     # Separate links by their extension
-    for link in links:
-        print(link)
-    
+    for link in links:    
         if ("linux" in link) and (".deb" in link):
-        
-            Deb_Link = link
+            if "splunkforwarder" not in link:
+                Deb_Link = link
+            else:
+                Deb_Forwarder_Link = link
         if ("linux" in link) and (".rpm" in link):
             Rpm_Link = link
         if ("linux" in link) and (".tgz" in link):
