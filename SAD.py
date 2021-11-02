@@ -496,7 +496,10 @@ def get_machine_info():
 def download_splunk(os_extension, links):
     # Separate links by their extension
     for link in links:
+        print(link)
+    
         if ("linux" in link) and (".deb" in link):
+        
             Deb_Link = link
         if ("linux" in link) and (".rpm" in link):
             Rpm_Link = link
@@ -516,15 +519,14 @@ def download_splunk(os_extension, links):
 
     # Install the correct package based on the current OS
     # Most of these commands need to be run with sudo
-    if os_extension == ".deb":
+    if os_extension == ".deb" and "splunkforwarder" no in:
         print("Starting .deb splunk download...")
         os.system("wget -O splunk.deb " + str(Deb_Link))
         print("Starting splunk install...")
         os.system("dpkg -i splunk.deb")
         
         # Start splunk forwarder and auto accept license agreement
-        os.system("cd /opt/splunkforwarder/bin")
-        os.system("./splunk start --accept-license")
+        os.system("cd /opt/splunkforwarder/bin; ./splunk start --accept-license")
  
     elif os_extension == ".rpm":
         print("Starting .rpm splunk download...")
