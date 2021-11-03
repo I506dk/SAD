@@ -13,10 +13,10 @@
 - Points all machines back to the deployment server.
 - Python packages required can be installed by the script 
 	if they are missing. No need to manually install packages.
-- Supports Windows and Linux operating systems
-	
+- Supports Windows and Linux operating systems 
  
 ## Dependencies
+[![Known Vulnerabilities](https://snyk.io/test/github/I506dk/SAD/badge.svg)](https://snyk.io/test/github/I506dk/SAD/)
 - [BeautifulSoup](https://pypi.org/project/beautifulsoup4/) - Web page scraping library
 - [Requests](https://pypi.org/project/requests/) - HTTP Library
 - [Paramiko](https://www.paramiko.org/) - A pure python implementation of SSH
