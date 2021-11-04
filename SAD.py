@@ -502,9 +502,15 @@ def download_splunk(os_extension, links):
             else:
                 Deb_Forwarder_Link = link
         if ("linux" in link) and (".rpm" in link):
-            Rpm_Link = link
+            if "splunkforwarder" not in link:
+                Rpm_Link = link
+            else:
+                Rpm_Forwarder_Link = link
         if ("linux" in link) and (".tgz" in link):
-            Linux_Tar_Link = link
+            if "splunkforwarder" not in link:
+                Linux_Tar_Link = link
+            else:
+                Forwarder_Tar_Link = link
         if ("windows" in link) and (".msi" in link):
             if "x64" in link:
                 Msi_Link_64 = link
