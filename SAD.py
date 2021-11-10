@@ -489,6 +489,55 @@ def get_machine_info():
         print("Unknown OS type: " + platform.platform())
         
     return hostname, local_ip, os_extension
+    
+    
+# Function to read in hostnames/IPs, credentials, and roles for all machines involved
+def read_in_roles():
+    while True:
+        # Ask user if they want to manually enter machine data or read in from file
+        Read_File = input("Would you like to read in machine roles and credentials from text file? (y/n) ")
+        
+        if Read_File == 'y' or Read_File == "yes":
+            # read in data from file
+            print("File should be in csv format with each line containing: ")
+            print("Hostname,IP Address,Username:Password,Role,\n")
+            File_Path = input("Enter filename if in current directory, or complete filepath otherwise: ")
+            # Make sure file/path exists
+            File_Existence = path.exists(File_Path)
+            # If file exists, open it and read in contents
+            if File_Existence == True:
+                # Open file
+                with open(File_Path, 'r') as file:
+                    File_Contents = file.readlines()
+                    # Parse list in place
+                    # Create nested list conataing information from each line in the text file
+                    for index, item in enumerate(File_Contents):
+                        File_Contents[index] = item.replace('\n', '')
+                    
+                    for index, item in enumerate(File_Contents):
+                        File_Contents[index] = item.split(',')
+                        
+                    for index, item in enumerate(File_Contents):
+                        for new_index, data in enumerate(item):
+                            if len(data) == 0:
+                                del item[new_index]
+            else:
+                print("Cannot find path specified...")
+            
+            print(File_Existence)
+            
+            pass      
+            break
+        elif Read_File == 'n' or Read_File == "no":
+            # ask user for each machine's data
+            
+            pass
+            break
+        else:
+            print("Invalid answer. Use y/Y for yes, and n/N for no.")
+    
+    
+    return
 
    
 # Download splunk with respect to the OS
@@ -674,7 +723,7 @@ def ssh_connect(hostname, username, password, port=22):
 # Beginning of main
 if __name__ == '__main__':
     # Get current version links for all platforms
-    Current_Links = fetch_current_links()
+    #Current_Links = fetch_current_links()
 
     # Scrape Splunkbase site for apps and app links
     #Current_Apps = get_app_links()
@@ -682,13 +731,16 @@ if __name__ == '__main__':
     # Download apps from splunkbase site
     #load_apps()
 
+    # Get all machines involved in deployment
+    read_in_roles()
+
 ##### For this machine (deployment server) #############################
 
     # Get current machine info
     Current_Hostname, Current_IP, Current_Extension = get_machine_info()
     
     # Download and install splunk
-    download_splunk(Current_Extension, Current_Links)
+    #download_splunk(Current_Extension, Current_Links)
     
 ########## For Testing #################################################
     hostname = '192.168.0.10'
