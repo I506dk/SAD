@@ -276,7 +276,6 @@ def update_app_links():
     App_File = "Splunk_Apps.txt"
     
     print("Reading in known apps...")
-    
     # Get already known apps
     Known_Apps = []
     
@@ -309,7 +308,6 @@ def update_app_links():
     Limit = 6150
     
     print("Starting enumeration of new apps (This will take some time...)")
-    
     # If apps have been previously discovered, start there
     if len(Known_Apps) > 0:
         Last_App = (Known_Apps[-1][1]).replace(App_Link, '')
@@ -369,15 +367,12 @@ def update_app_links():
                     i += 1
                 print(Current_Line)
                 file.write(Current_Line)
-                #Known_Apps.append(app)
                 Newly_Found += 1
                 
     print("Writing " + str(Newly_Found) + " newly found apps to file...") 
     file.close()
-
     print("Done with app enumeration.")
     
-    #return Known_Apps
     return
     
 
@@ -652,10 +647,8 @@ def download_splunk(os_extension, links):
     # No idea how osx works
     elif os_extension == ".dmg":
         print("Starting .dmg splunk download...")
-        #os.system("curl " + str(Msi_Link) + " --output splunk.msi")
         print("Starting splunk install...")
         Current_Directory = os.getcwd() + '\\'
-        #os.system("msiexec /i " + Current_Directory + "splunk.msi")
 
     else:
         print("OS is probably unknown. Nothing downloaded.")
@@ -671,6 +664,7 @@ def ssh_connect(hostname, username, password, links, port=22):
     client.load_system_host_keys()
     # Reject unknown host keys (If unknown, there is potential for compromise)
     #client.set_missing_host_key_policy(paramiko.RejectPolicy())
+######### Figure out way to load current machine host keys ####################################
     # AutoAdd will allow SSH session with unknown machine (For first time connecting)
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     # Set default timeout
@@ -720,11 +714,7 @@ def ssh_connect(hostname, username, password, links, port=22):
                 Dmg_Link = link
             if ("osx" in link) and (".tgz" in link):
                 Osx_Tar_Link = link
-                
-        # For testing
-        #Deb_Link = "https://download.splunk.com/products/splunk/releases/8.2.3/linux/splunk-8.2.3-cd0848707637-linux-2.6-amd64.deb"
-        #Rpm_Link = "https://download.splunk.com/products/splunk/releases/8.2.3/linux/splunk-8.2.3-cd0848707637-linux-2.6-x86_64.rpm"
-            
+    
         # Determine OS, and download respective packages
         if "windows" in Current_OS:
             print("Using .msi package")
@@ -1012,7 +1002,7 @@ def ssh_connect(hostname, username, password, links, port=22):
 
 ###### Functions to set up each role within the splunk environment #####
 # Function to setup a deployment server
-def create_deployment_server():
+def create_deployment_server(machine_data, links):
     # This should be the current machine
     # Download splunk
     # Configure
@@ -1073,48 +1063,47 @@ def create_indexer(machine_data, links):
     
     return
 # Function to setup a (universal) forwarder
-def create_forwarder():
+def create_forwarder(machine_data, links):
     # SSH into machine
     # Download splunk
     # Configure
     
     return
 # Function to setup a heavy forwarder
-def create_heavy_forwarder():
+def create_heavy_forwarder(machine_data, links):
     # SSH into machine
     # Download splunk
     # Configure
     
     return
 # Function to setup a cluster master
-def create_cluster_master():
+def create_cluster_master(machine_data, links):
     # SSH into machine
     # Download splunk
     # Configure
     
     return
 # Function to setup a search head
-def create_search_head():
+def create_search_head(machine_data, links):
     # SSH into machine
     # Download splunk
     # Configure
     
     return
 # Function to setup a license server
-def create_license_server():
+def create_license_server(machine_data, links):
     # SSH into machine
     # Download splunk
     # Configure
     
     return
 # Function to setup a monitoring console
-def create_monitoring_console():
+def create_monitoring_console(machine_data, links):
     # SSH into machine
     # Download splunk
     # Configure
     
     return
-
 
 
 ########################################################################
@@ -1129,20 +1118,8 @@ if __name__ == '__main__':
     # Download apps from splunkbase site
     #load_apps()
 
-    #ssh_connect("192.168.13.128", "redhat", "Linux_User", Current_Links)
-
-
     # Get all machines involved in deployment
     All_Roles = read_in_roles()
-
-##### For this machine (deployment server) #############################
-    # make sure deployment server matches the machine that this is running on.
-
-    # Get current machine info
-    #Current_Hostname, Current_IP, Current_Extension = get_machine_info()
-    
-    # Download and install splunk
-    #download_splunk(Current_Extension, Current_Links)
     
 ##### For all other machines, set them up with respect to their role ###
     # Keep up with the number of machines associated with each role.
@@ -1161,36 +1138,48 @@ if __name__ == '__main__':
         Current_Role = server[-1].lower()
         # Deployment server (Should be this machine)
         if Current_Role == "deployment server" or Current_Role == "ds":
-            #print("Deployment server role")
+            # This one is different, since it should be the current machine
+            # Check IP and Hostname to make sure it mactches
+            # Get current machine info
+            Current_Hostname, Current_IP, Current_Extension = get_machine_info()
+            # Download and install splunk
+            download_splunk(Current_Extension, Current_Links)
             Number_Of_DS += 1
+            
         # Indexer
         if Current_Role == "indexer" or Current_Role == "idx" or Current_Role == "i":
             create_indexer(server, Current_Links)
-            #print("Indexer role")
             Number_Of_I += 1
+            
         # Forwarder
         if Current_Role == "universal forwarder" or Current_Role == "forwarder" or Current_Role == "uf" or Current_Role == "f":
-            #print("Forwarder role")
+            create_forwarder(server, Current_Links)
             Number_Of_F += 1
+            
         # Heavy Forwarder
         if Current_Role == "heavy forwarder" or Current_Role == "hf":
-            #print("Heavy forwarder role")
+            create_heavy_forwarder(server, Current_Links)
             Number_Of_HF += 1
+            
         # Cluster Manager
         if Current_Role == "cluster manager" or Current_Role == "cluster master" or Current_Role == "cm":
-            #print("Cluster manager role")
+            create_cluster_master(server, Current_Links)
             Number_Of_CM += 1
+            
         # Search Head
         if Current_Role == "search head" or Current_Role == "sh":
-            #print("Search head role")
+            create_search_head(server, Current_Links)
             Number_Of_SH += 1
+            
         # License server (possibly pair with deployment server) (Maybe default to that if not specified)
         if Current_Role == "license manager" or Current_Role == "lm" or Current_Role == "license server" or Current_Role == "ls":
-            #print("License server role")
+            create_license_server(server, Current_Links)
+            # If no machine is given, default to adding it to the deployment server
             Number_Of_LS += 1
+            
         # Monitoring console
         if Current_Role == "monitoring console" or Current_Role == "mc":
-            #print("Monitoring console role")
+            create_monitoring_console(server, Current_Links)
             Number_Of_MC += 1
     
     # Total number of machines for each role
@@ -1201,17 +1190,6 @@ if __name__ == '__main__':
     print("Total number of Search Heads: " + str(Number_Of_SH))
     print("Total number of License Servers: " + str(Number_Of_LS))
     print("Total number of Monitoring Consoles: " + str(Number_Of_MC))
-    
-    
-    
-########## For Testing #################################################
-    hostname = '192.168.0.10'
-    username = "user"
-    password = "pass"
-    
-    # ssh into machines, install splunk, create any necessary files,
-    # point machine back to deployment server
-    #ssh_connect(hostname, username, password)
 
     # Print exit message
     print("My work here is done. Splunk deployment exiting...")
