@@ -493,6 +493,8 @@ def get_machine_info():
     
 # Function to read in hostnames/IPs, credentials, and roles for all machines involved
 def read_in_roles():
+    Deployment_Roles = []
+
     while True:
         # Ask user if they want to manually enter machine data or read in from file
         Read_File = input("Would you like to read in machine roles and credentials from text file? (y/n) ")
@@ -500,33 +502,36 @@ def read_in_roles():
         if Read_File == 'y' or Read_File == "yes":
             # read in data from file
             print("File should be in csv format with each line containing: ")
-            print("Hostname,IP Address,Username:Password,Role,\n")
-            File_Path = input("Enter filename if in current directory, or complete filepath otherwise: ")
-            # Make sure file/path exists
-            File_Existence = path.exists(File_Path)
-            # If file exists, open it and read in contents
-            if File_Existence == True:
-                # Open file
-                with open(File_Path, 'r') as file:
-                    File_Contents = file.readlines()
-                    # Parse list in place
-                    # Create nested list conataing information from each line in the text file
-                    for index, item in enumerate(File_Contents):
-                        File_Contents[index] = item.replace('\n', '')
-                    
-                    for index, item in enumerate(File_Contents):
-                        File_Contents[index] = item.split(',')
+            print("\nHostname,IP Address,Username:Password,Role,\n")
+
+            while True:
+                File_Path = input("Enter filename if in current directory, or complete filepath otherwise: ")
+                # Make sure file/path exists
+                File_Existence = path.exists(File_Path)
+                # If file exists, open it and read in contents
+                if File_Existence == True:
+                    # Open file
+                    with open(File_Path, 'r') as file:
+                        File_Contents = file.readlines()
+                        # Parse list in place
+                        # Create nested list conataing information from each line in the text file
+                        for index, item in enumerate(File_Contents):
+                            File_Contents[index] = item.replace('\n', '')
                         
-                    for index, item in enumerate(File_Contents):
-                        for new_index, data in enumerate(item):
-                            if len(data) == 0:
-                                del item[new_index]
-            else:
-                print("Cannot find path specified...")
-            
-            print(File_Existence)
-            
-            pass      
+                        for index, item in enumerate(File_Contents):
+                            File_Contents[index] = item.split(',')
+                            
+                        for index, item in enumerate(File_Contents):
+                            for new_index, data in enumerate(item):
+                                if len(data) == 0:
+                                    del item[new_index]
+                    # Close file and break out of loop
+                    file.close()
+                    Deployment_Roles = File_Contents
+                    break
+                else:
+                    # If the file cannot be found, tell the user, and ask for input again
+                    print("Cannot find path specified...")    
             break
         elif Read_File == 'n' or Read_File == "no":
             # ask user for each machine's data
@@ -535,9 +540,7 @@ def read_in_roles():
             break
         else:
             print("Invalid answer. Use y/Y for yes, and n/N for no.")
-    
-    
-    return
+    return Deployment_Roles
 
    
 # Download splunk with respect to the OS
@@ -661,69 +664,464 @@ def download_splunk(os_extension, links):
 
 ###########################################################
 # Function to login to ssh service for a given ip or hostname
-def ssh_connect(hostname, username, password, port=22):
+def ssh_connect(hostname, username, password, links, port=22):
     # setup ssh client, and set key policies (for unknown hosts mainly)
     client = paramiko.SSHClient()
     # Load SSH host keys on current machine
     client.load_system_host_keys()
     # Reject unknown host keys (If unknown, there is potential for compromise)
-    client.set_missing_host_key_policy(RejectPolicy)
-    # AutoAdd will allow SSH session with unknown machine
-    #client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    #client.set_missing_host_key_policy(paramiko.RejectPolicy())
+    # AutoAdd will allow SSH session with unknown machine (For first time connecting)
+    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     # Set default timeout
     banner_timeout = 10
     
     # Establish connection, run commands, and return command(s) output
     try:
+        # Connect to client machine
         client.connect(hostname, port, username, password, banner_timeout=banner_timeout)
         ssh_session = client.get_transport()
             
-        # Run commands and return output
-        stdin, stdout, stderr = client.exec_command('uname -a')
-        print(repr(stdout.read()))
-        stdin, stdout, stderr = client.exec_command('ls')
-        print(repr(stdout.read()))
-        
-        session = ssh_session.open_session()
-        session.set_combine_stderr(True)
-        session.get_pty()
-        
-        # Sudo
-        session.exec_command('sudo -k dmesg')
-        stdin = session.makefile('wb', -1)
-        stdout = session.makefile('rb', -1)
-        
-        # Check to see if password is needed
-        stdin.write(password +'\n')
-        stdin.flush()
-        for line in stdout.read().splitlines():        
-            print(line)
+        # Get the os running on the target machine
+        # Works on debian
+        #stdin, stdout, stderr = client.exec_command('uname -a')
+        # Works on redhat
+        stdin, stdout, stderr = client.exec_command('cat /proc/version')
+        Current_OS = stdout.read().decode("utf-8").lower()
+        print(Current_OS)
 
-        stdin.close()
-        stdout.close()
-        stderr.close()
-        client.close      
+        # Separate links by their extension
+        for link in links:    
+            if ("linux" in link) and (".deb" in link):
+                if "splunkforwarder" not in link:
+                    Deb_Link = link
+                else:
+                    Deb_Forwarder_Link = link
+            if ("linux" in link) and (".rpm" in link):
+                if "splunkforwarder" not in link:
+                    Rpm_Link = link
+                else:
+                    Rpm_Forwarder_Link = link
+            if ("linux" in link) and (".tgz" in link):
+                if "splunkforwarder" not in link:
+                    Linux_Tar_Link = link
+                else:
+                    Forwarder_Tar_Link = link
+            # Still need forwarder for windows
+            if ("windows" in link) and (".msi" in link):
+                if "x64" in link:
+                    Msi_Link_64 = link
+                elif "x86" in link:
+                    Msi_Link_86 = link
+                else:
+                    pass
+            # Need forwarder for mac
+            if ("osx" in link) and (".dmg" in link):
+                Dmg_Link = link
+            if ("osx" in link) and (".tgz" in link):
+                Osx_Tar_Link = link
+                
+        # For testing
+        #Deb_Link = "https://download.splunk.com/products/splunk/releases/8.2.3/linux/splunk-8.2.3-cd0848707637-linux-2.6-amd64.deb"
+        #Rpm_Link = "https://download.splunk.com/products/splunk/releases/8.2.3/linux/splunk-8.2.3-cd0848707637-linux-2.6-x86_64.rpm"
+            
+        # Determine OS, and download respective packages
+        if "windows" in Current_OS:
+            print("Using .msi package")
+            # Download .msi
+            download_splunk(".msi", ["www.app1.com", "www.app2.com"])
+            
+        elif ("redhat" in Current_OS) or ("red hat" in Current_OS) or ("fedora" in Current_OS) or ("centos" in Current_OS):
+            # Download splunk
+            print("Starting .rpm splunk download...")
+            # Set up for running commands that need sudo
+            session = ssh_session.open_session()
+            session.set_combine_stderr(True)
+            session.get_pty()
+            stdin = session.makefile('wb', -1)
+            stdout = session.makefile('rb', -1)
+            session.exec_command("sudo wget -O splunk.rpm " + str(Rpm_Link))
+            stdin.write(password +'\n')
+            stdin.flush()
+            for line in stdout.read().splitlines():
+                Current_Line = line.decode("utf-8")
+                if len(Current_Line) > 0:
+                    print(Current_Line)
+                    
+            # Install splunk
+            print("Starting splunk install...")
+            # Set up for running commands that need sudo
+            session = ssh_session.open_session()
+            session.set_combine_stderr(True)
+            session.get_pty()
+            stdin = session.makefile('wb', -1)
+            stdout = session.makefile('rb', -1)
+            session.exec_command("sudo rpm -ivh splunk.rpm")
+            stdin.write(password +'\n')
+            stdin.flush()
+            for line in stdout.read().splitlines():
+                Current_Line = line.decode("utf-8")
+                if len(Current_Line) > 0:
+                    print(Current_Line)
+                    
+            # Start splunk
+            print("Starting splunk service...")
+            # Set up for running commands that need sudo
+            session = ssh_session.open_session()
+            session.set_combine_stderr(True)
+            session.get_pty()
+            stdin = session.makefile('wb', -1)
+            stdout = session.makefile('rb', -1)
+            session.exec_command("cd /opt/splunk/bin && sudo ./splunk start --accept-license --answer-yes --seed-passwd 'password'")
+            stdin.write(password +'\n')
+            stdin.flush()
+            for line in stdout.read().splitlines():
+                Current_Line = line.decode("utf-8")
+                if len(Current_Line) > 0:
+                    print(Current_Line)
+            session.close()
+ 
+            # Get grub config file and create a new edited one
+            print("Editing Grub file to disable Transparent Huge Pages...")
+            New_Grub_Contents = []
+            stdin, stdout, stderr = client.exec_command('cat /etc/default/grub')
+            Grub_Contents = stdout.read().decode("utf-8")
+            Grub_Contents = Grub_Contents.split('\n')
+            for line in Grub_Contents:
+                if ("GRUB_CMDLINE_LINUX" in line) and ("GRUB_CMDLINE_LINUX_DEFAULT" not in line):
+                    if "transparent_hugepage=never" not in line:
+                        Current_Line = line
+                        Disable_THP = Current_Line[:-1] + ' transparent_hugepage=never"'
+                        New_Grub_Contents.append(str(Disable_THP))
+                else:
+                    New_Grub_Contents.append(str(line))
+
+            # Get current permissions of grub file (typically 644)
+            stdin, stdout, stderr = client.exec_command('stat -c %a /etc/default/grub')
+            Grub_Permissions = stdout.read().decode("utf-8").lower()
+            Grub_Permissions = Grub_Permissions.replace('\n', '')
+
+            # Change grub permissions so anyone can write to it
+            session = ssh_session.open_session()
+            session.set_combine_stderr(True)
+            session.get_pty()
+            stdin = session.makefile('wb', -1)
+            stdout = session.makefile('rb', -1)
+            session.exec_command("sudo chmod 777 /etc/default/grub")
+            stdin.write(password +'\n')
+            stdin.flush()
+            for line in stdout.read().splitlines():
+                Current_Line = line.decode("utf-8")
+                if len(Current_Line) > 0:
+                    print(Current_Line)
+
+            # Write new configurations to grub file
+            sftp = paramiko.SFTPClient.from_transport(ssh_session)
+            Grub_File = sftp.open('/etc/default/grub', 'w+')
+            for line in New_Grub_Contents:
+                Grub_File.write((line + '\n'))
+            Grub_File.flush()
+            Grub_File.close()
+            
+            # Change grub permissions back to original
+            session = ssh_session.open_session()
+            session.set_combine_stderr(True)
+            session.get_pty()
+            stdin = session.makefile('wb', -1)
+            stdout = session.makefile('rb', -1)
+            session.exec_command("sudo chmod " + str(Grub_Permissions) + " /etc/default/grub")
+            stdin.write(password +'\n')
+            stdin.flush()
+            for line in stdout.read().splitlines():
+                Current_Line = line.decode("utf-8")
+                if len(Current_Line) > 0:
+                    print(Current_Line)
+            
+            # Update grub
+            # sudo update-grub works on debian
+            # For redhat
+            # sudo grub2-mkconfig -o /boot/grub2/grub.cfg
+            session = ssh_session.open_session()
+            session.set_combine_stderr(True)
+            session.get_pty()
+            stdin = session.makefile('wb', -1)
+            stdout = session.makefile('rb', -1)
+            session.exec_command("sudo grub2-mkconfig -o /boot/grub2/grub.cfg")
+            stdin.write(password +'\n')
+            stdin.flush()
+            for line in stdout.read().splitlines():
+                Current_Line = line.decode("utf-8")
+                if len(Current_Line) > 0:
+                    print(Current_Line)
+            
+            # Close connection and exit
+            stdin.close()
+            stdout.close()
+            stderr.close()
+            session.close()
+
+        elif ("ubuntu" in Current_OS) or ("kali" in Current_OS) or ("parrot" in Current_OS):
+            # Download splunk
+            print("Starting .deb splunk download...")
+            # Set up for running commands that need sudo
+            session = ssh_session.open_session()
+            session.set_combine_stderr(True)
+            session.get_pty()
+            stdin = session.makefile('wb', -1)
+            stdout = session.makefile('rb', -1)
+            session.exec_command("sudo wget -O splunk.deb " + str(Deb_Link))
+            stdin.write(password +'\n')
+            stdin.flush()
+            for line in stdout.read().splitlines():
+                Current_Line = line.decode("utf-8")
+                if len(Current_Line) > 0:
+                    print(Current_Line)
+
+            # Install splunk
+            print("Starting splunk install...")
+            # Set up for running commands that need sudo
+            session = ssh_session.open_session()
+            session.set_combine_stderr(True)
+            session.get_pty()
+            stdin = session.makefile('wb', -1)
+            stdout = session.makefile('rb', -1)
+            session.exec_command("sudo dpkg -i splunk.deb")
+            stdin.write(password +'\n')
+            stdin.flush()
+            for line in stdout.read().splitlines():
+                Current_Line = line.decode("utf-8")
+                if len(Current_Line) > 0:
+                    print(Current_Line)
+                    
+            # Start splunk
+            print("Starting splunk service...")
+            # Set up for running commands that need sudo
+            session = ssh_session.open_session()
+            session.set_combine_stderr(True)
+            session.get_pty()
+            stdin = session.makefile('wb', -1)
+            stdout = session.makefile('rb', -1)
+            session.exec_command("cd /opt/splunk/bin && sudo ./splunk start --accept-license --answer-yes --seed-passwd 'password'")
+            stdin.write(password +'\n')
+            stdin.flush()
+            for line in stdout.read().splitlines():
+                Current_Line = line.decode("utf-8")
+                if len(Current_Line) > 0:
+                    print(Current_Line)      
+            
+            # Get grub config file and create a new edited one
+            print("Editing Grub file to disable Transparent Huge Pages...")
+            New_Grub_Contents = []
+            stdin, stdout, stderr = client.exec_command('cat /etc/default/grub')
+            Grub_Contents = stdout.read().decode("utf-8")
+            Grub_Contents = Grub_Contents.split('\n')
+            for line in Grub_Contents:
+                if ("GRUB_CMDLINE_LINUX" in line) and ("GRUB_CMDLINE_LINUX_DEFAULT" not in line):
+                    if "transparent_hugepage=never" not in line:
+                        Current_Line = line
+                        Disable_THP = Current_Line[:-1] + ' transparent_hugepage=never"'
+                        New_Grub_Contents.append(str(Disable_THP))
+                else:
+                    New_Grub_Contents.append(str(line))
+
+            # Get current permissions of grub file (typically 644)
+            stdin, stdout, stderr = client.exec_command('stat -c %a /etc/default/grub')
+            Grub_Permissions = stdout.read().decode("utf-8").lower()
+            Grub_Permissions = Grub_Permissions.replace('\n', '')
+
+            # Change grub permissions so anyone can write to it
+            session = ssh_session.open_session()
+            session.set_combine_stderr(True)
+            session.get_pty()
+            stdin = session.makefile('wb', -1)
+            stdout = session.makefile('rb', -1)
+            session.exec_command("sudo chmod 777 /etc/default/grub")
+            stdin.write(password +'\n')
+            stdin.flush()
+            for line in stdout.read().splitlines():
+                Current_Line = line.decode("utf-8")
+                if len(Current_Line) > 0:
+                    print(Current_Line)
+
+            # Write new configurations to grub file
+            sftp = paramiko.SFTPClient.from_transport(ssh_session)
+            Grub_File = sftp.open('/etc/default/grub', 'w+')
+            for line in New_Grub_Contents:
+                Grub_File.write((line + '\n'))
+            Grub_File.flush()
+            Grub_File.close()
+            
+            # Change grub permissions back to original
+            session = ssh_session.open_session()
+            session.set_combine_stderr(True)
+            session.get_pty()
+            stdin = session.makefile('wb', -1)
+            stdout = session.makefile('rb', -1)
+            session.exec_command("sudo chmod " + str(Grub_Permissions) + " /etc/default/grub")
+            stdin.write(password +'\n')
+            stdin.flush()
+            for line in stdout.read().splitlines():
+                Current_Line = line.decode("utf-8")
+                if len(Current_Line) > 0:
+                    print(Current_Line)
+            
+            # Update grub
+            # sudo update-grub works on debian
+            # For redhat
+            # sudo grub2-mkconfig -o /boot/grub2/grub.cfg
+            session = ssh_session.open_session()
+            session.set_combine_stderr(True)
+            session.get_pty()
+            stdin = session.makefile('wb', -1)
+            stdout = session.makefile('rb', -1)
+            session.exec_command("sudo update-grub")
+            stdin.write(password +'\n')
+            stdin.flush()
+            for line in stdout.read().splitlines():
+                Current_Line = line.decode("utf-8")
+                if len(Current_Line) > 0:
+                    print(Current_Line)
+
+            # Close connection and exit
+            stdin.close()
+            stdout.close()
+            stderr.close()
+            session.close()
+            
+        elif "macos" in Current_OS:
+            #print("Using .dmg package")
+            # Download .dmg
+            print("OSX currently not supported yet.")
+        else:
+            print("Unknown OS type")   
     
     # Catch errors for failed login, or connection rejection
-    except paramiko.ssh_exception.AuthenticationException as err:
+    except paramiko.ssh_exception.AuthenticationException as error:
         print("Authentication Error. Incorrect login credentials.")
-    except paramiko.ssh_exception.SSHException as err1:
+    except paramiko.ssh_exception.SSHException as error_1:
         print("Too many requests, or not enough resources. Implementing rate limiting.")
         banner_timeout += 2
-    except TimeoutError as err2:
+    except TimeoutError as error_2:
         print("Connection attempt timed out.")
     
     # Close client when done
-    client.close
+    client.close()
     
     return
+
+
+###### Functions to set up each role within the splunk environment #####
+# Function to setup a deployment server
+def create_deployment_server():
+    # This should be the current machine
+    # Download splunk
+    # Configure
+    # Install apps
+    
+    return
+# Function to setup an indexer  
+def create_indexer(machine_data, links):
+    # Role is obviously indexer if we are at this point, so need to get that
+    # If we have 4 items, assume they are hostname, ip address, credentials, role
+    # If there are only 3, assume that we only got ip address or hostnames
+    if len(machine_data) == 4:
+        hostname = machine_data[0]
+        ip_address = machine_data[1]
+        credentials = machine_data[2]
+        credentials = credentials.split(':')
+        if len(credentials) == 2:
+            username = credentials[0]
+            password = credentials[1]
+        else:
+            print("Incorrect format for credentials.")
+            
+        # Try to connect by hostname first, if that fails, try IP
+        try:
+            # SSH into machine, download/install/start splunk, disable THP
+            ssh_connect(hostname, username, password, links)
+        except socket.gaierror:
+            print("Failed to connect to hostname : " + str(hostname))
+            print("Trying ip address instead...")
+            try:
+                # SSH into machine, download/install/start splunk, disable THP
+                ssh_connect(ip_address, username, password, links)
+            except socket.gaierror:
+                print("Failed to connect to ip address: " + str(ip_address))
+                print("Cannot establish connection to machine.")
+                
+    # If only given 3 items, assume we didn't get both the hostname and ip address. Only one of them
+    elif len(machine_data) == 3:
+        connect_name = machine_data[0]
+        credentials = machine_data[1]
+        credentials = credentials.split(':')
+        if len(credentials) == 2:
+            username = credentials[0]
+            password = credentials[1]
+        else:
+            print("Incorrect format for credentials.")
+        
+        # Try to connect to machine
+        try:
+            # SSH into machine, download/install/start splunk, disable THP
+            ssh_connect(connect_name, username, password, links)
+        except socket.gaierror:
+            print("Failed to connect to: " + str(connect_name))
+            print("Cannot establish connection to machine.")
+    
+    # Do other configuration stuff
+    # At the very end, reboot machine
+    
+    return
+# Function to setup a (universal) forwarder
+def create_forwarder():
+    # SSH into machine
+    # Download splunk
+    # Configure
+    
+    return
+# Function to setup a heavy forwarder
+def create_heavy_forwarder():
+    # SSH into machine
+    # Download splunk
+    # Configure
+    
+    return
+# Function to setup a cluster master
+def create_cluster_master():
+    # SSH into machine
+    # Download splunk
+    # Configure
+    
+    return
+# Function to setup a search head
+def create_search_head():
+    # SSH into machine
+    # Download splunk
+    # Configure
+    
+    return
+# Function to setup a license server
+def create_license_server():
+    # SSH into machine
+    # Download splunk
+    # Configure
+    
+    return
+# Function to setup a monitoring console
+def create_monitoring_console():
+    # SSH into machine
+    # Download splunk
+    # Configure
+    
+    return
+
 
 
 ########################################################################
 # Beginning of main
 if __name__ == '__main__':
     # Get current version links for all platforms
-    #Current_Links = fetch_current_links()
+    Current_Links = fetch_current_links()
 
     # Scrape Splunkbase site for apps and app links
     #Current_Apps = get_app_links()
@@ -731,16 +1129,80 @@ if __name__ == '__main__':
     # Download apps from splunkbase site
     #load_apps()
 
+    #ssh_connect("192.168.13.128", "redhat", "Linux_User", Current_Links)
+
+
     # Get all machines involved in deployment
-    read_in_roles()
+    All_Roles = read_in_roles()
 
 ##### For this machine (deployment server) #############################
+    # make sure deployment server matches the machine that this is running on.
 
     # Get current machine info
-    Current_Hostname, Current_IP, Current_Extension = get_machine_info()
+    #Current_Hostname, Current_IP, Current_Extension = get_machine_info()
     
     # Download and install splunk
     #download_splunk(Current_Extension, Current_Links)
+    
+##### For all other machines, set them up with respect to their role ###
+    # Keep up with the number of machines associated with each role.
+    # (Purely just to print back to user. Not inherently important)
+    Number_Of_DS = 0
+    Number_Of_I = 0
+    Number_Of_F = 0
+    Number_Of_HF = 0
+    Number_Of_CM = 0
+    Number_Of_SH = 0
+    Number_Of_LS = 0
+    Number_Of_MC = 0
+
+    # For each of the servers, set them up according to their roles
+    for server in All_Roles:
+        Current_Role = server[-1].lower()
+        # Deployment server (Should be this machine)
+        if Current_Role == "deployment server" or Current_Role == "ds":
+            #print("Deployment server role")
+            Number_Of_DS += 1
+        # Indexer
+        if Current_Role == "indexer" or Current_Role == "idx" or Current_Role == "i":
+            create_indexer(server, Current_Links)
+            #print("Indexer role")
+            Number_Of_I += 1
+        # Forwarder
+        if Current_Role == "universal forwarder" or Current_Role == "forwarder" or Current_Role == "uf" or Current_Role == "f":
+            #print("Forwarder role")
+            Number_Of_F += 1
+        # Heavy Forwarder
+        if Current_Role == "heavy forwarder" or Current_Role == "hf":
+            #print("Heavy forwarder role")
+            Number_Of_HF += 1
+        # Cluster Manager
+        if Current_Role == "cluster manager" or Current_Role == "cluster master" or Current_Role == "cm":
+            #print("Cluster manager role")
+            Number_Of_CM += 1
+        # Search Head
+        if Current_Role == "search head" or Current_Role == "sh":
+            #print("Search head role")
+            Number_Of_SH += 1
+        # License server (possibly pair with deployment server) (Maybe default to that if not specified)
+        if Current_Role == "license manager" or Current_Role == "lm" or Current_Role == "license server" or Current_Role == "ls":
+            #print("License server role")
+            Number_Of_LS += 1
+        # Monitoring console
+        if Current_Role == "monitoring console" or Current_Role == "mc":
+            #print("Monitoring console role")
+            Number_Of_MC += 1
+    
+    # Total number of machines for each role
+    print("Total number of Deployment Servers: " + str(Number_Of_DS))
+    print("Total number of Indexers: " + str(Number_Of_I))
+    print("Total number of Forwarders (Heavy and Universal): " + str(Number_Of_F + Number_Of_HF))
+    print("Total number of Cluster Masters: " + str(Number_Of_CM))
+    print("Total number of Search Heads: " + str(Number_Of_SH))
+    print("Total number of License Servers: " + str(Number_Of_LS))
+    print("Total number of Monitoring Consoles: " + str(Number_Of_MC))
+    
+    
     
 ########## For Testing #################################################
     hostname = '192.168.0.10'
