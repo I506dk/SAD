@@ -20,12 +20,11 @@
 - [BeautifulSoup](https://pypi.org/project/beautifulsoup4/) - Web page scraping library
 - [Requests](https://pypi.org/project/requests/) - HTTP Library
 - [Paramiko](https://www.paramiko.org/) - A pure python implementation of SSH
-
 	
 ## Installation
 **Download the latest release of python below:**
 
-[![Python](https://www.python.org/static/community_logos/python-powered-w-100x40.png)](https://www.python.org/downloads/)
+[![Python Latest](https://img.shields.io/badge/python-latest-blue.svg)](https://www.python.org/downloads/windows/)
 
 **Download and install Pip using the following commands:**
 ```
@@ -46,10 +45,11 @@ pip install paramiko
 ## To Do:
 
 - [x] Fetch all versions of Splunk Enterprise for download
-- [ ] Fetch all versions of the Splunk Forwarder
+- [x] Fetch all versions of the Splunk Forwarder
 - [x] Download and install Splunk with respect to the OS
 - [ ] Get a list of all apps on the Splunkbase site so that the user can install those as well
-- [ ] Add SSH to access all other machines in the deployment
+- [x] Add SSH to access all other machines in the deployment
+- [ ] Configure best practices on each machine (Disable THP, etc.)
 - [ ] Create directories and apps on the deployment server
 - [ ] Point all other machines back to the deployment server
 - [ ] Create output file of configuration created
